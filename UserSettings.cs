@@ -11,13 +11,30 @@ using VRage.Game.Components;
 using VRage.ModAPI;
 using VRage.Game.ModAPI;
 using VRage;
+using System.Runtime.CompilerServices;
 
 namespace PSYCHO.ThrusterVisualHandlerData
 {
-    public class UserData
+    [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate)]
+
+    public class UserData : MySessionComponentBase
     {
         // DO NOT EDIT THIS!
         // TODO move to the main class file instead.
+
+        public static UserData UserDataInstance;
+
+        public override void LoadData()
+        {
+            UserDataInstance = this;
+
+            ConstructThrusterData();
+        }
+
+        protected override void UnloadData()
+        {
+            UserDataInstance = null;
+        }
 
         string MySubtypeID;
         public Dictionary<string, List<ThrusterData>> MyThrusterData = new Dictionary<string, List<ThrusterData>>();
@@ -64,9 +81,9 @@ namespace PSYCHO.ThrusterVisualHandlerData
 
         public void ConstructThrusterData()
         {
+            // COPY AND EDIT THIS PER THRUSTER / THRUSTER + EMISSIVE MATERIAL
             ThrusterData thrustData = new ThrusterData();
 
-            // COPY AND EDIT THIS PER THRUSTER / THRUSTER + EMISSIVE MATERIAL
             MySubtypeID = "SuperThruster_Small";
             // STATIC
             thrustData.EmissiveMaterialName = "Emissive";
@@ -91,8 +108,6 @@ namespace PSYCHO.ThrusterVisualHandlerData
             if (!MyThrusterData.ContainsKey(MySubtypeID))
                 MyThrusterData[MySubtypeID] = new List<ThrusterData>();
             MyThrusterData[MySubtypeID].Add(thrustData);
-
-            MyAPIGateway.Utilities.ShowNotification("Data constructed.", 10000);
         }
 
         // ==========================

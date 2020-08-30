@@ -1,13 +1,15 @@
-﻿using Sandbox.Common.ObjectBuilders;
+﻿using System;
+using System.Collections.Generic;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using VRageMath;
 using VRage.ObjectBuilders;
 using VRage.Game.Components;
 using VRage.ModAPI;
 using VRage.Game.ModAPI;
-using System;
-using System.Collections.Generic;
 using VRage.Game.Entity;
+
+using PSYCHO.ThrusterVisualHandlerData;
 
 // TODO
 // * Simplify even more for non-coders.
@@ -37,13 +39,15 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
         public MyEntitySubpart subpart;
         public string subpartName = "Empty";
 
+        UserData MyUserData => UserData.UserDataInstance;
+
         bool OneEmissiveMaterial = false;
 
         public List<string> MaterialNames = new List<string>();
 
         //PSYCHO.ThrusterVisualHandlerData.UserData MyUserData = new PSYCHO.ThrusterVisualHandlerData.UserData();
-        public List<PSYCHO.ThrusterVisualHandlerData.UserData.ThrusterData> ThrusterData = new List<PSYCHO.ThrusterVisualHandlerData.UserData.ThrusterData>();
-        PSYCHO.ThrusterVisualHandlerData.UserData.ThrusterData OneThrusterData;
+        public List<UserData.ThrusterData> ThrusterData = new List<UserData.ThrusterData>();
+        UserData.ThrusterData OneThrusterData;
         /*
         public object this[string propertyName]
         {
@@ -122,8 +126,6 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             NeedsUpdate = MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
         }
 
-        PSYCHO.ThrusterVisualHandlerData.UserData MyUserData = new PSYCHO.ThrusterVisualHandlerData.UserData();
-
         public override void UpdateOnceBeforeFrame()
         {
             if (block == null) // Null check all the things.
@@ -134,10 +136,10 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             block.TryGetSubpart(subpartName, out subpart);
             //subpart = block.GetSubpart(subpartName);
 
-            @MyAPIGateway.Utilities.ShowNotification(MyUserData.MyThrusterData.Count.ToString(), 10000);
-            return;
-
             ThrusterData = MyUserData.GetThrusterData(blockSubtypeID);
+
+            //@MyAPIGateway.Utilities.ShowNotification(ThrusterData.Count.ToString(), 10000);
+            //return;
 
             if (ThrusterData.Count == 1)
             {
@@ -145,6 +147,7 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
                 OneThrusterData = ThrusterData[0];
             }
 
+            //MyAPIGateway.Utilities.ShowNotification(ThrusterData.Count.ToString(), 10000);
 
             /*
             if (OneEmissiveMaterial)
@@ -218,7 +221,6 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
                     }
                 }
             }
-
 
             // Hook to events.
             block.IsWorkingChanged += IsWorkingChanged;
@@ -297,9 +299,7 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             }
         }
 
-
-
-        public void PrepData(PSYCHO.ThrusterVisualHandlerData.UserData.ThrusterData data)
+        public void PrepData(UserData.ThrusterData data)
         {
             EmissiveMaterialName = data.EmissiveMaterialName;
 
