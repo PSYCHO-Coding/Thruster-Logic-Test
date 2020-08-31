@@ -111,8 +111,8 @@ namespace PSYCHO.ThrusterVisualHandlerData
             thrustData.MaxThrust_EmissiveMultiplierMin = 1f;
             thrustData.MaxThrust_EmissiveMultiplierMax = 50f;
             // EDIT DEFAULTS
-            thrustData.ErrorColor = Color.Magenta;
-            thrustData.CurrentColor = Color.Magenta;
+            //thrustData.ErrorColor = Color.Magenta;
+            //thrustData.CurrentColor = Color.Magenta;
 
             // DO NOT EDIT
             if (!MyThrusterData.ContainsKey(MySubtypeID))

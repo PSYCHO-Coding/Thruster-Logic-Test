@@ -232,8 +232,8 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             MaxThrust_EmissiveMultiplierMin = data.MaxThrust_EmissiveMultiplierMin;
             MaxThrust_EmissiveMultiplierMax = data.MaxThrust_EmissiveMultiplierMax;
 
-            ErrorColor = data.ErrorColor;
-            CurrentColor = data.CurrentColor;
+            //ErrorColor = data.ErrorColor;
+            //CurrentColor = data.CurrentColor;
         }
 
 
@@ -331,7 +331,7 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
                 if (CurrentEmissiveMultiplier < mult)
                     CurrentEmissiveMultiplier += 0.005f;
                 else
-                    CurrentEmissiveMultiplier = MaxThrust_EmissiveMultiplierMin + (MaxThrust_EmissiveMultiplierMax - MaxThrust_EmissiveMultiplierMin) * glow;
+                    CurrentEmissiveMultiplier = mult * glow;
 
                 CurrentColor = Color.Lerp(OnColor, ColorAtMaxThrust, glow);
 
@@ -351,13 +351,13 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
                 Color color = ErrorColor;
 
-                if (!block.IsWorking)
+                if (!block.IsFunctional)
+                {
+                    color = Color.Lerp(CurrentColor, NonFunctionalColor, glow);
+                }
+                else if (!block.IsWorking)
                 {
                     color = Color.Lerp(CurrentColor, NonWorkingColor, glow);
-                }
-                else if (block.Enabled)
-                {
-                    color = Color.Lerp(CurrentColor, OnColor, glow);
                 }
                 else
                 {
