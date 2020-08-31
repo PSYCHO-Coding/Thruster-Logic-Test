@@ -78,7 +78,7 @@ namespace PSYCHO.ThrusterVisualHandlerData
         {
             "SuperThruster_Small"
         };
-
+        //PaintedMetal_VeryDark
         public void ConstructThrusterData()
         {
             // ==============================================================

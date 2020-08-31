@@ -23,6 +23,7 @@ using VRageRender;
 using VRageRender.Import;
 
 using PSYCHO.ThrusterVisualHandlerData;
+using System.Linq;
 
 namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 {
@@ -42,6 +43,8 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
         public List<string> MaterialNames = new List<string>();
 
         public List<UserData.ThrusterData> ThrusterData = new List<UserData.ThrusterData>();
+        public List<UserData.ThrusterData> StaticThrusterData = new List<UserData.ThrusterData>();
+        public List<UserData.ThrusterData> DynamicThrusterData = new List<UserData.ThrusterData>();
 
         string EmissiveMaterialName = "Emissive";
 
@@ -63,6 +66,8 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
         Color ErrorColor = Color.Magenta;
         Color CurrentColor = Color.Magenta;
+
+        int EmissiveMaterialCount = 0;
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -91,30 +96,30 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             block.TryGetSubpart(subpartName, out subpart);
 
             ThrusterData = MyUserData.GetThrusterData(blockSubtypeID);
+            EmissiveMaterialCount = ThrusterData.Count;
 
-            if (ThrusterData.Count == 1)
+            if (EmissiveMaterialCount == 1)
             {
                 OneEmissiveMaterial = true;
-            }
+                PrepData(ThrusterData[0]);
 
-            if (ChangeColorByThrustOutput)
-            {
-                if (OneEmissiveMaterial)
-                    PrepData(ThrusterData[0]);
-                NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
+                if (ChangeColorByThrustOutput)
+                    NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
+                else
+                    CheckAndSetEmissives();
             }
             else
             {
-                if (OneEmissiveMaterial)
+                foreach (var data in ThrusterData)
                 {
-                    PrepData(ThrusterData[0]);
-                    CheckAndSetEmissives();
-                }
-                else
-                {
-                    foreach (var data in ThrusterData)
+                    PrepData(data);
+                    if (ChangeColorByThrustOutput)
                     {
-                        PrepData(data);
+                        DynamicThrusterData.Add(data);
+                    }
+                    else
+                    {
+                        StaticThrusterData.Add(data);
                         CheckAndSetEmissives();
                     }
                 }
@@ -148,31 +153,30 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
         {
             if (block == null)
             {
-                //MyAPIGateway.Utilities.ShowNotification("IsWorkingChanged was null for some reason,");
                 return;
             }
 
             //subpart = block.GetSubpart(subpartName);
             block.TryGetSubpart(subpartName, out subpart);
 
-            if (ChangeColorByThrustOutput)
-            {
-                NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
-                return;
-            }
-
             if (OneEmissiveMaterial)
             {
-                //var data = ThrusterData[0];
-                //PrepData(OneThrusterData);
                 CheckAndSetEmissives();
             }
             else
             {
-                foreach (var data in ThrusterData)
+                if (StaticThrusterData.Any())
                 {
-                    PrepData(data);
-                    CheckAndSetEmissives();
+                    foreach (var data in StaticThrusterData)
+                    {
+                        PrepData(data);
+                        CheckAndSetEmissives();
+                    }
+                }
+
+                if (DynamicThrusterData.Any())
+                {
+                    NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
                 }
             }
         }
@@ -183,31 +187,30 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
         {
             if (block == null)
             {
-                //MyAPIGateway.Utilities.ShowNotification("PropertiesChanged was null for some reason,");
                 return;
             }
 
             //subpart = block.GetSubpart(subpartName);
             block.TryGetSubpart(subpartName, out subpart);
 
-            if (ChangeColorByThrustOutput)
-            {
-                NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
-                return;
-            }
-
             if (OneEmissiveMaterial)
             {
-                //var data = ThrusterData[0];
-                //PrepData(OneThrusterData);
                 CheckAndSetEmissives();
             }
             else
             {
-                foreach (var data in ThrusterData)
+                if (StaticThrusterData.Any())
                 {
-                    PrepData(data);
-                    CheckAndSetEmissives();
+                    foreach (var data in StaticThrusterData)
+                    {
+                        PrepData(data);
+                        CheckAndSetEmissives();
+                    }
+                }
+
+                if (DynamicThrusterData.Any())
+                {
+                    NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
                 }
             }
         }
@@ -302,11 +305,14 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             }
             else
             {
-                foreach (var data in ThrusterData)
+                foreach (var data in DynamicThrusterData)
                 {
+                    MaterialAppliedCount++;
                     PrepData(data);
                     HandleEmissives();
                 }
+
+                MaterialAppliedCount = 0;
             }
         }
 
@@ -314,10 +320,13 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
         float glow;
         float CurrentEmissiveMultiplier = 0f;
+        int MaterialAppliedCount = 0;
         public void HandleEmissives()
         {
             if (block.IsFunctional && block.IsWorking && block.Enabled)
             {
+                MaterialAppliedCount = 0;
+
                 float thrustPercent = block.CurrentThrust / block.MaxThrust;
 
                 if (glow <= 0 && thrustPercent <= AntiFlickerThreshold)
@@ -343,60 +352,68 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             }
             else
             {
-                float minRamp = 0.01f;
-
-                if (glow > 0)
-                    glow -= minRamp * MathHelper.Clamp(glow, 1f, float.MaxValue);
-
-                MyAPIGateway.Utilities.ShowNotification((0.01f * glow).ToString(), 1);
-
-                if (CurrentEmissiveMultiplier > 0)
-                    CurrentEmissiveMultiplier -= minRamp * MathHelper.Clamp(CurrentEmissiveMultiplier, 1f, float.MaxValue);
-
                 Color color = ErrorColor;
+                Color colorApply = ErrorColor;
+                float mult = 1f;
 
                 if (!block.IsFunctional)
                 {
-                    color = Color.Lerp(CurrentColor, NonFunctionalColor, glow);
+                    color = NonFunctionalColor;
+                    mult = ThrusterNonFunctional_EmissiveMultiplier + (MaxThrust_EmissiveMultiplierMax - ThrusterNonFunctional_EmissiveMultiplier);
                 }
-                else if (!block.IsWorking)
+                else if (!block.Enabled)
                 {
-                    color = Color.Lerp(CurrentColor, NonWorkingColor, glow);
+                    color = OffColor;
+                    mult = ThrusterOff_EmissiveMultiplier + (MaxThrust_EmissiveMultiplierMax - ThrusterOff_EmissiveMultiplier);
                 }
                 else
                 {
-                    color = Color.Lerp(CurrentColor, OffColor, glow);
+                    color = NonWorkingColor;
+                    mult = ThrusterNotWorking_EmissiveMultiplier + (MaxThrust_EmissiveMultiplierMax - ThrusterNotWorking_EmissiveMultiplier);
                 }
 
-                block.SetEmissiveParts(EmissiveMaterialName, color, CurrentEmissiveMultiplier);
+                float minRamp = 0.005f;
+
+                if (glow > 0)
+                    glow -= minRamp;
+
+                colorApply = Color.Lerp(color, ColorAtMaxThrust, glow);
+                CurrentEmissiveMultiplier = mult * glow;
+
+                block.SetEmissiveParts(EmissiveMaterialName, colorApply, CurrentEmissiveMultiplier);
                 if (subpart != null)
                 {
-                    subpart.SetEmissiveParts(EmissiveMaterialName, color, CurrentEmissiveMultiplier);
+                    subpart.SetEmissiveParts(EmissiveMaterialName, colorApply, CurrentEmissiveMultiplier);
                 }
 
-                if (glow <= 0 && CurrentEmissiveMultiplier <= 0)
+                if (glow <= 0)
                 {
-                    glow = 0f;
-                    CurrentEmissiveMultiplier = 0f;
-
                     if (!block.IsFunctional)
                     {
                         color = NonFunctionalColor;
+                        mult = ThrusterNonFunctional_EmissiveMultiplier;
                     }
-                    else if (!block.IsWorking)
+                    else if (!block.Enabled)
                     {
-                        color = NonWorkingColor;
+                        color = OffColor;
+                        mult = ThrusterOff_EmissiveMultiplier;
                     }
                     else
                     {
-                        color = OffColor;
+                        color = NonWorkingColor;
+                        mult = ThrusterNotWorking_EmissiveMultiplier;
                     }
 
-                    block.SetEmissiveParts(EmissiveMaterialName, color, ThrusterNonFunctional_EmissiveMultiplier);
+                    CurrentEmissiveMultiplier = mult;
+
+                    block.SetEmissiveParts(EmissiveMaterialName, color, mult);
                     if (subpart != null)
                     {
-                        subpart.SetEmissiveParts(EmissiveMaterialName, color, ThrusterNonFunctional_EmissiveMultiplier);
+                        subpart.SetEmissiveParts(EmissiveMaterialName, color, mult);
                     }
+
+                    if (MaterialAppliedCount < EmissiveMaterialCount)
+                        return;
 
                     NeedsUpdate = MyEntityUpdateEnum.NONE;
                 }
