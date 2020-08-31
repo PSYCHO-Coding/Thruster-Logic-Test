@@ -20,8 +20,6 @@ namespace PSYCHO.ThrusterVisualHandlerData
     public class UserData : MySessionComponentBase
     {
         // DO NOT EDIT THIS!
-        // TODO move to the main class file instead.
-
         public static UserData UserDataInstance;
 
         public override void LoadData()
@@ -38,6 +36,7 @@ namespace PSYCHO.ThrusterVisualHandlerData
 
         string MySubtypeID;
         public Dictionary<string, List<ThrusterData>> MyThrusterData = new Dictionary<string, List<ThrusterData>>();
+        ThrusterData thrustData;
 
         public List<ThrusterData> GetThrusterData(string _subtypeID)
         {
@@ -74,6 +73,7 @@ namespace PSYCHO.ThrusterVisualHandlerData
         // USER CHANGABLE VARIABLES
         // ========================
 
+        // Add your thrusters.
         public readonly HashSet<string> ThrusterSubtypeIDs = new HashSet<string>()
         {
             "SuperThruster_Small"
@@ -81,12 +81,21 @@ namespace PSYCHO.ThrusterVisualHandlerData
 
         public void ConstructThrusterData()
         {
+            // ==============================================================
             // COPY AND EDIT THIS PER THRUSTER / THRUSTER + EMISSIVE MATERIAL
-            ThrusterData thrustData = new ThrusterData();
+            // ==============================================================
 
+            // ONLY EDIT VALUES THAT PROPERLY ANOTATED WITH '// EDIT'
+
+            // ============================================================== COPY BLOCK START
+            // DO NOT EDIT
+            thrustData = new ThrusterData();
+
+            // EDIT THRUSTER
             MySubtypeID = "SuperThruster_Small";
-            // STATIC
+            // EDIT MATERIAL
             thrustData.EmissiveMaterialName = "Emissive";
+            // EDIT STATIC
             thrustData.OnColor = new Color(0, 20, 255);
             thrustData.OffColor = new Color(0, 0, 0);
             thrustData.NonWorkingColor = new Color(0, 0, 0);
@@ -95,19 +104,21 @@ namespace PSYCHO.ThrusterVisualHandlerData
             thrustData.ThrusterOff_EmissiveMultiplier = 0f;
             thrustData.ThrusterNotWorking_EmissiveMultiplier = 0f;
             thrustData.ThrusterNonFunctional_EmissiveMultiplier = 0f;
-            // DYNAMIC
+            // EDIT DYNAMIC
             thrustData.ChangeColorByThrustOutput = true;
             thrustData.AntiFlickerThreshold = 0.01f;
             thrustData.ColorAtMaxThrust = new Color(255, 40, 10);
             thrustData.MaxThrust_EmissiveMultiplierMin = 1f;
             thrustData.MaxThrust_EmissiveMultiplierMax = 50f;
-            // DEFAULTS
+            // EDIT DEFAULTS
             thrustData.ErrorColor = Color.Magenta;
             thrustData.CurrentColor = Color.Magenta;
 
+            // DO NOT EDIT
             if (!MyThrusterData.ContainsKey(MySubtypeID))
                 MyThrusterData[MySubtypeID] = new List<ThrusterData>();
             MyThrusterData[MySubtypeID].Add(thrustData);
+            // ============================================================== COPY BLOCK END
         }
 
         // ==========================

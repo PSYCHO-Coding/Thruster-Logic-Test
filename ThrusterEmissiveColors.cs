@@ -9,27 +9,23 @@ using VRage.ModAPI;
 using VRage.Game.ModAPI;
 using VRage.Game.Entity;
 
+using System.Text;
+using Sandbox.Definitions;
+using Sandbox.Game.Components;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Cube;
+using Sandbox.Game.EntityComponents;
+using Sandbox.ModAPI.Interfaces.Terminal;
+using VRage.Game;
+using VRage.Game.Models;
+using VRage.Utils;
+using VRageRender;
+using VRageRender.Import;
+
 using PSYCHO.ThrusterVisualHandlerData;
 
-// TODO
-// * Simplify even more for non-coders.
-// * Add separate emissive mat handling with different colors by material name.
-
-// REMARKS
-// The code only runs when/while needed. Should be pretty performance friendly.
-// However, some tests needed for SP VS MP because those two really don't like each others code. Thanks Keen for ensuring it's never boring... Or easy. :P
-// Smack that coder. xD
-
-// CHANGE THE NAMESPACE TO AVOID CONFLICTS!
-// For instance, Your Space Engineers moniker, unless it's super common, then use some more unique ID or a combo of your player name and mod name.
-// E.g. SomeSuperCoolPlayerNameYouProbablyHave_ModName.ThrusterEmissiveColors.
-// FancyJoe_SuperCoolThrusters.ThrusterEmissiveColors
 namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 {
-    // CHANGE THE SUBTYPES HERE
-    // ADD AS MANY AS YOU NEED
-    // E.g.
-    // [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), false, "YourSubTypeHere", "YourOtherSubTypeHere", "AndAnotherThruster", "AndYetAnotherOne")]
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), false)]
 
     public class ThrusterEmissiveColorsLogic : MyGameLogicComponent
@@ -45,65 +41,28 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
         public List<string> MaterialNames = new List<string>();
 
-        //PSYCHO.ThrusterVisualHandlerData.UserData MyUserData = new PSYCHO.ThrusterVisualHandlerData.UserData();
         public List<UserData.ThrusterData> ThrusterData = new List<UserData.ThrusterData>();
-        UserData.ThrusterData OneThrusterData;
-        /*
-        public object this[string propertyName]
-        {
-            get
-            {
-                var property = GetType().GetProperty(propertyName);
-                return property.GetValue(this, null);
-            }
-            set
-            {
-                var property = GetType().GetProperty(propertyName);
-                property.SetValue(this, value, null);
-            }
-        }
-        */
 
-        /*
-        public object GetThrustData(string propertyName)
-        {
-            var property = UserData.GetType().GetProperty(propertyName);
-            return property.GetValue(this, null);
-        }
-        */
-
-        // ========================
-
-        // ========================
-
-        // MATERIAL NAMES
         string EmissiveMaterialName = "Emissive";
 
-        // CHANGE THESE TO DESIRED IN RGB 0-255
-        Color OnColor            = new Color(0, 20, 255); // On color, when thruster is ON.
-        Color OffColor           = new Color(0, 0, 0);    // Off color, when thruster is OFF.
-        Color NonWorkingColor    = new Color(0, 0, 0);    // When the block is not working, like no power.
-        Color NonFunctionalColor = new Color(0, 0, 0);    // When the block is damaged, like from impact or weapon fire.
+        Color OnColor            = new Color(0, 20, 255);
+        Color OffColor           = new Color(0, 0, 0);
+        Color NonWorkingColor    = new Color(0, 0, 0);
+        Color NonFunctionalColor = new Color(0, 0, 0);
 
-        // GLOW STRENGTH MULTIPLIERS
         float ThrusterOn_EmissiveMultiplier            = 10f;
         float ThrusterOff_EmissiveMultiplier           = 0f;
         float ThrusterNotWorking_EmissiveMultiplier    = 0f;
         float ThrusterNonFunctional_EmissiveMultiplier = 0f;
 
-        bool ChangeColorByThrustOutput = true;           // Change this for static or dynamic colors.
-        float AntiFlickerThreshold = 0.01f;              // If the emissive flicker, increase the threshold.
-        Color ColorAtMaxThrust = new Color(255, 40, 10); // Color to reach at max thrust, otherwise 'OnColor' will be used when thruster is idle.
+        bool ChangeColorByThrustOutput = true;
+        float AntiFlickerThreshold = 0.01f;
+        Color ColorAtMaxThrust = new Color(255, 40, 10);
         float MaxThrust_EmissiveMultiplierMin = 1f;
         float MaxThrust_EmissiveMultiplierMax = 50f;
 
-        // CHANGE THIS ONLY IF IT CLASHES WITH YOUR COLORS
-        // Set these defaults to a color easy to spot if something isn't working correctly.
         Color ErrorColor = Color.Magenta;
         Color CurrentColor = Color.Magenta;
-
-        // END
-        // ============================================================================================================================
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -111,11 +70,6 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
             if (block == null)
                 return;
-
-            if (MyUserData.ThrusterSubtypeIDs == null)
-            {
-                //@MyAPIGateway.Utilities.ShowNotification("Hashset was null!", 10000);
-            }
 
             if (!MyUserData.ThrusterSubtypeIDs.Contains(block.BlockDefinition.SubtypeId))
             {
@@ -133,83 +87,27 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             
             blockSubtypeID = block.BlockDefinition.SubtypeId;
 
-            block.TryGetSubpart(subpartName, out subpart);
             //subpart = block.GetSubpart(subpartName);
+            block.TryGetSubpart(subpartName, out subpart);
 
             ThrusterData = MyUserData.GetThrusterData(blockSubtypeID);
-
-            //@MyAPIGateway.Utilities.ShowNotification(ThrusterData.Count.ToString(), 10000);
-            //return;
 
             if (ThrusterData.Count == 1)
             {
                 OneEmissiveMaterial = true;
-                OneThrusterData = ThrusterData[0];
             }
-
-            //MyAPIGateway.Utilities.ShowNotification(ThrusterData.Count.ToString(), 10000);
-
-            /*
-            if (OneEmissiveMaterial)
-            {
-                var data = ThrusterData[0];
-                PrepData(data);
-
-                EmissiveMaterialName = data.EmissiveMaterialName;
-
-                OnColor = data.OnColor;
-                OffColor = data.OffColor;
-                NonWorkingColor = data.NonWorkingColor;
-                NonFunctionalColor = data.NonFunctionalColor;
-
-                ThrusterOn_EmissiveMultiplier = data.ThrusterOn_EmissiveMultiplier;
-                ThrusterOff_EmissiveMultiplier = data.ThrusterOff_EmissiveMultiplier;
-                ThrusterNotWorking_EmissiveMultiplier = data.ThrusterNotWorking_EmissiveMultiplier;
-                ThrusterNonFunctional_EmissiveMultiplier = data.ThrusterNonFunctional_EmissiveMultiplier;
-
-                ChangeColorByThrustOutput = data.ChangeColorByThrustOutput;
-                AntiFlickerThreshold = data.AntiFlickerThreshold;
-                ColorAtMaxThrust = data.ColorAtMaxThrust;
-                MaxThrust_EmissiveMultiplierMin = data.MaxThrust_EmissiveMultiplierMin;
-                MaxThrust_EmissiveMultiplierMax = data.MaxThrust_EmissiveMultiplierMax;
-
-                ErrorColor = data.ErrorColor;
-                CurrentColor = data.CurrentColor;
-            }
-            */
-
-            //var ThrusterData = UserData.GetThrusterData();
-
-            /*
-                foreach (var person in people)
-                {
-                    Console.WriteLine(person.ID);
-                    Console.WriteLine(person.Name);
-                    Console.WriteLine(person.SomeOtherValue);
-                }
-
-            for (int i = 0; i < ThrusterData.Count; i++)
-            {
-                //Console.WriteLine(ThrusterData.Item1[i]);
-                //Console.WriteLine(ThrusterData.Item2[i]);
-            }
-
-            foreach (var material in ThrusterData)
-            {
-                //MaterialNames.Add();
-            }
-            */
 
             if (ChangeColorByThrustOutput)
             {
+                if (OneEmissiveMaterial)
+                    PrepData(ThrusterData[0]);
                 NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
             }
             else
             {
                 if (OneEmissiveMaterial)
                 {
-                    //var data = ThrusterData[0];
-                    PrepData(OneThrusterData);
+                    PrepData(ThrusterData[0]);
                     CheckAndSetEmissives();
                 }
                 else
@@ -233,6 +131,7 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
         {
             if (block == null)
                 return;
+
             // Unhook from events.
             block.IsWorkingChanged -= IsWorkingChanged;
             block.PropertiesChanged -= PropertiesChanged;
@@ -247,7 +146,14 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
         private void IsWorkingChanged(IMyCubeBlock block)
         {
-            subpart = block.GetSubpart(subpartName);
+            if (block == null)
+            {
+                //MyAPIGateway.Utilities.ShowNotification("IsWorkingChanged was null for some reason,");
+                return;
+            }
+
+            //subpart = block.GetSubpart(subpartName);
+            block.TryGetSubpart(subpartName, out subpart);
 
             if (ChangeColorByThrustOutput)
             {
@@ -275,7 +181,14 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
         public void PropertiesChanged(IMyTerminalBlock block)
         {
-            subpart = block.GetSubpart(subpartName);
+            if (block == null)
+            {
+                //MyAPIGateway.Utilities.ShowNotification("PropertiesChanged was null for some reason,");
+                return;
+            }
+
+            //subpart = block.GetSubpart(subpartName);
+            block.TryGetSubpart(subpartName, out subpart);
 
             if (ChangeColorByThrustOutput)
             {
@@ -391,10 +304,8 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             }
             else
             {
-                //@MyAPIGateway.Utilities.ShowNotification("foreach ThrusterData", 1000);
                 foreach (var data in ThrusterData)
                 {
-                    //@MyAPIGateway.Utilities.ShowNotification("foreach data", 1000);
                     PrepData(data);
                     HandleEmissives();
                 }
@@ -405,7 +316,6 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
         public void HandleEmissives()
         {
-            //@MyAPIGateway.Utilities.ShowNotification("HandleEmissives()", 1000);
             if (block.IsFunctional && block.IsWorking && block.Enabled)
             {
                 float thrustPercent = block.CurrentThrust / block.MaxThrust;
@@ -434,10 +344,10 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             else
             {
                 if (glow > 0)
-                    glow -= 0.005f;
+                    glow -= 0.01f;
 
                 if (CurrentEmissiveMultiplier > 0)
-                    CurrentEmissiveMultiplier -= 0.005f;
+                    CurrentEmissiveMultiplier -= 0.01f;
 
                 Color color = ErrorColor;
 
