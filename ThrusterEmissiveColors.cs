@@ -285,8 +285,6 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
 
 
-        float glow;
-        float CurrentEmissiveMultiplier = 0f;
         // Handle dynamic color changes.
         public override void UpdateAfterSimulation()
         {
@@ -314,6 +312,8 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
 
 
+        float glow;
+        float CurrentEmissiveMultiplier = 0f;
         public void HandleEmissives()
         {
             if (block.IsFunctional && block.IsWorking && block.Enabled)
@@ -343,11 +343,15 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             }
             else
             {
+                float minRamp = 0.01f;
+
                 if (glow > 0)
-                    glow -= 0.01f;
+                    glow -= minRamp * MathHelper.Clamp(glow, 1f, float.MaxValue);
+
+                MyAPIGateway.Utilities.ShowNotification((0.01f * glow).ToString(), 1);
 
                 if (CurrentEmissiveMultiplier > 0)
-                    CurrentEmissiveMultiplier -= 0.01f;
+                    CurrentEmissiveMultiplier -= minRamp * MathHelper.Clamp(CurrentEmissiveMultiplier, 1f, float.MaxValue);
 
                 Color color = ErrorColor;
 
@@ -374,10 +378,24 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
                 {
                     glow = 0f;
                     CurrentEmissiveMultiplier = 0f;
-                    block.SetEmissiveParts(EmissiveMaterialName, NonFunctionalColor, ThrusterNonFunctional_EmissiveMultiplier);
+
+                    if (!block.IsFunctional)
+                    {
+                        color = NonFunctionalColor;
+                    }
+                    else if (!block.IsWorking)
+                    {
+                        color = NonWorkingColor;
+                    }
+                    else
+                    {
+                        color = OffColor;
+                    }
+
+                    block.SetEmissiveParts(EmissiveMaterialName, color, ThrusterNonFunctional_EmissiveMultiplier);
                     if (subpart != null)
                     {
-                        subpart.SetEmissiveParts(EmissiveMaterialName, NonFunctionalColor, ThrusterNonFunctional_EmissiveMultiplier);
+                        subpart.SetEmissiveParts(EmissiveMaterialName, color, ThrusterNonFunctional_EmissiveMultiplier);
                     }
 
                     NeedsUpdate = MyEntityUpdateEnum.NONE;
