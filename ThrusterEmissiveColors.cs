@@ -143,27 +143,18 @@ namespace PSYCHO.ThrusterEmissiveColors
                 PrepData(data);
                 if (ChangeColorByThrustOutput)
                 {
+                    // Load data as new instance, set defaults where needed, check for errors or missing values and set to defaults as well.
                     DynamicData = new ThrusterDataHandler.ThrusterData();
-                    //dynamicData = data;
-
-                    /*
-                    data.ActiveColor = data.OnColor;
-                    data.InactiveColor = data.NonFunctionalColor;
-                    data.ActiveGlow = data.ThrusterOn_EmissiveMultiplier;
-                    data.InactiveGlow = data.ThrusterNonFunctional_EmissiveMultiplier;
-                    data.ThrusterStatus = 0f;
-                    data.ThrusterStrength = 0f;
-                    */
 
                     DynamicData.EmissiveMaterialName = data.EmissiveMaterialName;
                     DynamicData.OnColor = data.OnColor;
                     DynamicData.OffColor = data.OffColor;
-                    DynamicData.NonWorkingColor = data.NonWorkingColor;
+                    DynamicData.NotWorkingColor = data.NotWorkingColor;
                     DynamicData.NonFunctionalColor = data.NonFunctionalColor;
-                    DynamicData.ThrusterOn_EmissiveMultiplier = data.ThrusterOn_EmissiveMultiplier;
-                    DynamicData.ThrusterOff_EmissiveMultiplier = data.ThrusterOff_EmissiveMultiplier;
-                    DynamicData.ThrusterNotWorking_EmissiveMultiplier = data.ThrusterNotWorking_EmissiveMultiplier;
-                    DynamicData.ThrusterNonFunctional_EmissiveMultiplier = data.ThrusterNonFunctional_EmissiveMultiplier;
+                    DynamicData.ThrusterOnEmissiveMultiplier = data.ThrusterOnEmissiveMultiplier;
+                    DynamicData.ThrusterOffEmissiveMultiplier = data.ThrusterOffEmissiveMultiplier;
+                    DynamicData.ThrusterNotWorkingEmissiveMultiplier = data.ThrusterNotWorkingEmissiveMultiplier;
+                    DynamicData.ThrusterNonFunctionalEmissiveMultiplier = data.ThrusterNonFunctionalEmissiveMultiplier;
                     DynamicData.ChangeColorByThrustOutput = data.ChangeColorByThrustOutput;
                     DynamicData.AntiFlickerThreshold = data.AntiFlickerThreshold;
                     DynamicData.ColorAtMaxThrust = data.ColorAtMaxThrust;
@@ -171,12 +162,41 @@ namespace PSYCHO.ThrusterEmissiveColors
                     DynamicData.MaxThrust_EmissiveMultiplierMax = data.MaxThrust_EmissiveMultiplierMax;
                     DynamicData.ErrorColor = data.ErrorColor;
                     DynamicData.CurrentColor = data.CurrentColor;
+
                     DynamicData.ActiveColor = data.OnColor;
                     DynamicData.InactiveColor = data.NonFunctionalColor;
-                    DynamicData.ActiveGlow = data.ThrusterOn_EmissiveMultiplier;
-                    DynamicData.InactiveGlow = data.ThrusterNonFunctional_EmissiveMultiplier;
+                    DynamicData.ActiveGlow = data.ThrusterOnEmissiveMultiplier;
+                    DynamicData.InactiveGlow = data.ThrusterNonFunctionalEmissiveMultiplier;
                     DynamicData.ThrusterStatus = 0f;
                     DynamicData.ThrusterStrength = 0f;
+
+                    if (data.ThrusterStatusRampUp == 0f)
+                        data.ThrusterStatusRampUp = 0.005f;
+                    DynamicData.ThrusterStatusRampUp = data.ThrusterStatusRampUp;
+
+                    if (data.ThrusterStatusRampDown == 0f)
+                        data.ThrusterStatusRampDown = 0.005f;
+                    DynamicData.ThrusterStatusRampDown = data.ThrusterStatusRampDown;
+
+                    if (data.ThrusterStrengthRampUp == 0f)
+                        data.ThrusterStrengthRampUp = 0.005f;
+                    DynamicData.ThrusterStrengthRampUp = data.ThrusterStrengthRampUp;
+
+                    if (data.ThrusterStrengthRampDown == 0f)
+                        data.ThrusterStrengthRampDown = 0.005f;
+                    DynamicData.ThrusterStrengthRampDown = data.ThrusterStrengthRampDown;
+
+                    if (data.ThrusterOffRampDown == 0f)
+                        data.ThrusterOffRampDown = 0.005f;
+                    DynamicData.ThrusterOffRampDown = data.ThrusterOffRampDown;
+
+                    if (data.ThrusterNotWorkingRampDown == 0f)
+                        data.ThrusterNotWorkingRampDown = 0.005f;
+                    DynamicData.ThrusterNotWorkingRampDown = data.ThrusterNotWorkingRampDown;
+
+                    if (data.ThrusterNonFunctionalRampDown == 0f)
+                        data.ThrusterNonFunctionalRampDown = 0.005f;
+                    DynamicData.ThrusterNonFunctionalRampDown = data.ThrusterNonFunctionalRampDown;
 
                     DynamicThrusterData.Add(DynamicData);
                 }
@@ -306,13 +326,13 @@ namespace PSYCHO.ThrusterEmissiveColors
 
             OnColor = data.OnColor;
             OffColor = data.OffColor;
-            NonWorkingColor = data.NonWorkingColor;
+            NonWorkingColor = data.NotWorkingColor;
             NonFunctionalColor = data.NonFunctionalColor;
 
-            ThrusterOn_EmissiveMultiplier = data.ThrusterOn_EmissiveMultiplier;
-            ThrusterOff_EmissiveMultiplier = data.ThrusterOff_EmissiveMultiplier;
-            ThrusterNotWorking_EmissiveMultiplier = data.ThrusterNotWorking_EmissiveMultiplier;
-            ThrusterNonFunctional_EmissiveMultiplier = data.ThrusterNonFunctional_EmissiveMultiplier;
+            ThrusterOn_EmissiveMultiplier = data.ThrusterOnEmissiveMultiplier;
+            ThrusterOff_EmissiveMultiplier = data.ThrusterOffEmissiveMultiplier;
+            ThrusterNotWorking_EmissiveMultiplier = data.ThrusterNotWorkingEmissiveMultiplier;
+            ThrusterNonFunctional_EmissiveMultiplier = data.ThrusterNonFunctionalEmissiveMultiplier;
 
             ChangeColorByThrustOutput = data.ChangeColorByThrustOutput;
             AntiFlickerThreshold = data.AntiFlickerThreshold;
@@ -423,40 +443,42 @@ namespace PSYCHO.ThrusterEmissiveColors
         //float ThrusterStatus = 0f;
         //float ThrusterStrength = 0f;
         //public void HandleEmissives(UserData.ThrusterData data)
+
+        // OPTIMIZE/SIMPLIFY
         void HandleEmissives(int index)
         {
             if (block.IsFunctional && block.IsWorking && block.Enabled)
             {
-                DynamicThrusterData[index].ThrusterStatus = MathHelper.Clamp(DynamicThrusterData[index].ThrusterStatus + 0.005f, 0f, 1f);
+                DynamicThrusterData[index].ThrusterStatus = MathHelper.Clamp(DynamicThrusterData[index].ThrusterStatus + DynamicThrusterData[index].ThrusterStatusRampUp, 0f, 1f);
 
                 if (DynamicThrusterData[index].ThrusterStatus == 1)
                 {
                     if (ThrustPercent > ThrustPercentLast && DynamicThrusterData[index].ThrusterStrength < ThrustPercent)
                     {
-                        DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength + 0.005f), 0f, 1f);
+                        DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength + DynamicThrusterData[index].ThrusterStrengthRampUp), 0f, 1f);
                     }
                     else if (ThrustPercent < ThrustPercentLast && DynamicThrusterData[index].ThrusterStrength > ThrustPercent)
                     {
-                        DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength - 0.005f), 0f, 1f);
+                        DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength - DynamicThrusterData[index].ThrusterStrengthRampDown), 0f, 1f);
                     }
                     else
                     {
                         if (DynamicThrusterData[index].ThrusterStrength < ThrustPercent)
                         {
-                            DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength + 0.005f), 0f, ThrustPercent);
+                            DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength + DynamicThrusterData[index].ThrusterStrengthRampUp), 0f, ThrustPercent);
                         }
                         else if (DynamicThrusterData[index].ThrusterStrength > ThrustPercent)
                         {
-                            DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength - 0.005f), ThrustPercent, 1f);
+                            DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength - DynamicThrusterData[index].ThrusterStrengthRampDown), ThrustPercent, 1f);
                         }
                     }
 
-                    DynamicThrusterData[index].ActiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterOn_EmissiveMultiplier, DynamicThrusterData[index].MaxThrust_EmissiveMultiplierMax, DynamicThrusterData[index].ThrusterStrength);
+                    DynamicThrusterData[index].ActiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterOnEmissiveMultiplier, DynamicThrusterData[index].MaxThrust_EmissiveMultiplierMax, DynamicThrusterData[index].ThrusterStrength);
                     DynamicThrusterData[index].ActiveColor = Color.Lerp(DynamicThrusterData[index].OnColor, DynamicThrusterData[index].ColorAtMaxThrust, DynamicThrusterData[index].ThrusterStrength);
                 }
                 else
                 {
-                    DynamicThrusterData[index].ActiveGlow = MathHelper.Lerp(DynamicThrusterData[index].InactiveGlow, DynamicThrusterData[index].ThrusterOn_EmissiveMultiplier, DynamicThrusterData[index].ThrusterStatus);
+                    DynamicThrusterData[index].ActiveGlow = MathHelper.Lerp(DynamicThrusterData[index].InactiveGlow, DynamicThrusterData[index].ThrusterOnEmissiveMultiplier, DynamicThrusterData[index].ThrusterStatus);
                     DynamicThrusterData[index].ActiveColor = Color.Lerp(DynamicThrusterData[index].InactiveColor, DynamicThrusterData[index].OnColor, DynamicThrusterData[index].ThrusterStatus);
                 }
 
@@ -477,24 +499,27 @@ namespace PSYCHO.ThrusterEmissiveColors
             }
             else
             {
-                DynamicThrusterData[index].ThrusterStatus = MathHelper.Clamp(DynamicThrusterData[index].ThrusterStatus - 0.005f, 0f, 1f);
+                //DynamicThrusterData[index].ThrusterStatus = MathHelper.Clamp(DynamicThrusterData[index].ThrusterStatus - DynamicThrusterData[index].ThrusterStatusRampDown, 0f, 1f);
 
                 DynamicThrusterData[index].ThrusterStrength = 0f;
 
                 if (!block.IsFunctional)
                 {
-                    DynamicThrusterData[index].InactiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterNonFunctional_EmissiveMultiplier, DynamicThrusterData[index].ActiveGlow, DynamicThrusterData[index].ThrusterStatus);
+                    DynamicThrusterData[index].ThrusterStatus = MathHelper.Clamp(DynamicThrusterData[index].ThrusterStatus - DynamicThrusterData[index].ThrusterNonFunctionalRampDown, 0f, 1f);
+                    DynamicThrusterData[index].InactiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterNonFunctionalEmissiveMultiplier, DynamicThrusterData[index].ActiveGlow, DynamicThrusterData[index].ThrusterStatus);
                     DynamicThrusterData[index].InactiveColor = Color.Lerp(DynamicThrusterData[index].NonFunctionalColor, DynamicThrusterData[index].ActiveColor, DynamicThrusterData[index].ThrusterStatus);
                 }
                 else if (!block.Enabled)
                 {
-                    DynamicThrusterData[index].InactiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterOff_EmissiveMultiplier, DynamicThrusterData[index].ActiveGlow, DynamicThrusterData[index].ThrusterStatus);
+                    DynamicThrusterData[index].ThrusterStatus = MathHelper.Clamp(DynamicThrusterData[index].ThrusterStatus - DynamicThrusterData[index].ThrusterOffRampDown, 0f, 1f);
+                    DynamicThrusterData[index].InactiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterOffEmissiveMultiplier, DynamicThrusterData[index].ActiveGlow, DynamicThrusterData[index].ThrusterStatus);
                     DynamicThrusterData[index].InactiveColor = Color.Lerp(DynamicThrusterData[index].OffColor, DynamicThrusterData[index].ActiveColor, DynamicThrusterData[index].ThrusterStatus);
                 }
                 else
                 {
-                    DynamicThrusterData[index].InactiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterNotWorking_EmissiveMultiplier, DynamicThrusterData[index].ActiveGlow, DynamicThrusterData[index].ThrusterStatus);
-                    DynamicThrusterData[index].InactiveColor = Color.Lerp(DynamicThrusterData[index].NonWorkingColor, DynamicThrusterData[index].ActiveColor, DynamicThrusterData[index].ThrusterStatus);
+                    DynamicThrusterData[index].ThrusterStatus = MathHelper.Clamp(DynamicThrusterData[index].ThrusterStatus - DynamicThrusterData[index].ThrusterNotWorkingRampDown, 0f, 1f);
+                    DynamicThrusterData[index].InactiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterNotWorkingEmissiveMultiplier, DynamicThrusterData[index].ActiveGlow, DynamicThrusterData[index].ThrusterStatus);
+                    DynamicThrusterData[index].InactiveColor = Color.Lerp(DynamicThrusterData[index].NotWorkingColor, DynamicThrusterData[index].ActiveColor, DynamicThrusterData[index].ThrusterStatus);
                 }
 
                 block.SetEmissiveParts(DynamicThrusterData[index].EmissiveMaterialName, DynamicThrusterData[index].InactiveColor, DynamicThrusterData[index].InactiveGlow);

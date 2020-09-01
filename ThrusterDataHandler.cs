@@ -56,12 +56,12 @@ namespace PSYCHO.ThrusterVisualHandlerData
             public string EmissiveMaterialName { get; set; }
             public Color OnColor { get; set; }
             public Color OffColor { get; set; }
-            public Color NonWorkingColor { get; set; }
+            public Color NotWorkingColor { get; set; }
             public Color NonFunctionalColor { get; set; }
-            public float ThrusterOn_EmissiveMultiplier { get; set; }
-            public float ThrusterOff_EmissiveMultiplier { get; set; }
-            public float ThrusterNotWorking_EmissiveMultiplier { get; set; }
-            public float ThrusterNonFunctional_EmissiveMultiplier { get; set; }
+            public float ThrusterOnEmissiveMultiplier { get; set; }
+            public float ThrusterOffEmissiveMultiplier { get; set; }
+            public float ThrusterNotWorkingEmissiveMultiplier { get; set; }
+            public float ThrusterNonFunctionalEmissiveMultiplier { get; set; }
             public bool ChangeColorByThrustOutput { get; set; }
             public float AntiFlickerThreshold { get; set; }
             public Color ColorAtMaxThrust { get; set; }
@@ -75,6 +75,16 @@ namespace PSYCHO.ThrusterVisualHandlerData
             public float InactiveGlow { get; set; }
             public float ThrusterStatus { get; set; }
             public float ThrusterStrength { get; set; }
+
+            public float ThrusterStatusRampUp { get; set; }
+            public float ThrusterStatusRampDown { get; set; }
+
+            public float ThrusterStrengthRampUp { get; set; }
+            public float ThrusterStrengthRampDown { get; set; }
+
+            public float ThrusterOffRampDown { get; set; }
+            public float ThrusterNotWorkingRampDown { get; set; }
+            public float ThrusterNonFunctionalRampDown { get; set; }
         }
     }
 }
