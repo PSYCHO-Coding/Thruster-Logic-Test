@@ -13,111 +13,199 @@ using VRage.Game.ModAPI;
 using VRage;
 using System.Runtime.CompilerServices;
 
-namespace PSYCHO.ThrusterVisualHandlerData
+using PSYCHO.ThrusterVisualHandlerData;
+
+namespace PSYCHO.ThrusterVisualHandlerUserSettings
 {
-    [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate)]
-
-    public class UserData : MySessionComponentBase
+    public class UserData
     {
-        // DO NOT EDIT THIS!
-        public static UserData UserDataInstance;
-
-        public override void LoadData()
-        {
-            UserDataInstance = this;
-
-            ConstructThrusterData();
-        }
-
-        protected override void UnloadData()
-        {
-            UserDataInstance = null;
-        }
-
-        string MySubtypeID;
-        public Dictionary<string, List<ThrusterData>> MyThrusterData = new Dictionary<string, List<ThrusterData>>();
-        ThrusterData thrustData;
-
-        public List<ThrusterData> GetThrusterData(string _subtypeID)
-        {
-            if (!MyThrusterData.ContainsKey(_subtypeID))
-            {
-                MyAPIGateway.Utilities.ShowNotification("GetThrusterData was NULL.", 10000);
-                return null;
-            }
-
-            return MyThrusterData[_subtypeID];
-        }
-
-        public class ThrusterData
-        {
-            public string EmissiveMaterialName { get; set; }
-            public Color OnColor { get; set; }
-            public Color OffColor { get; set; }
-            public Color NonWorkingColor { get; set; }
-            public Color NonFunctionalColor { get; set; }
-            public float ThrusterOn_EmissiveMultiplier { get; set; }
-            public float ThrusterOff_EmissiveMultiplier { get; set; }
-            public float ThrusterNotWorking_EmissiveMultiplier { get; set; }
-            public float ThrusterNonFunctional_EmissiveMultiplier { get; set; }
-            public bool ChangeColorByThrustOutput { get; set; }
-            public float AntiFlickerThreshold { get; set; }
-            public Color ColorAtMaxThrust { get; set; }
-            public float MaxThrust_EmissiveMultiplierMin { get; set; }
-            public float MaxThrust_EmissiveMultiplierMax { get; set; }
-            public Color ErrorColor { get; set; }
-            public Color CurrentColor { get; set; }
-        }
+        // DO NOT EDIT!!!
+        ThrusterDataHandler ThrusterDataInstance => ThrusterDataHandler.ThrusterDataInstance;
 
         // ========================
         // USER CHANGABLE VARIABLES
         // ========================
 
-        // Add your thrusters.
+        // ADD THRUSTERS HERE.
         public readonly HashSet<string> ThrusterSubtypeIDs = new HashSet<string>()
         {
-            "SuperThruster_Small"
+            "SuperThruster_Small",
+            "LargeBlockSmallThrust",
+            "LargeBlockLargeThrust"
         };
-        //PaintedMetal_VeryDark
+        
         public void ConstructThrusterData()
         {
             // ==============================================================
             // COPY AND EDIT THIS PER THRUSTER / THRUSTER + EMISSIVE MATERIAL
             // ==============================================================
 
-            // ONLY EDIT VALUES THAT PROPERLY ANOTATED WITH '// EDIT'
+            // ONLY EDIT VALUES THAT ARE PROPERLY ANOTATED WITH '// EDIT'
 
             // ============================================================== COPY BLOCK START
             // DO NOT EDIT
-            thrustData = new ThrusterData();
+            ThrusterDataInstance.thrustData = new ThrusterDataHandler.ThrusterData();
 
             // EDIT THRUSTER
-            MySubtypeID = "SuperThruster_Small";
+            ThrusterDataInstance.MySubtypeID = "SuperThruster_Small";
             // EDIT MATERIAL
-            thrustData.EmissiveMaterialName = "Emissive";
+            ThrusterDataInstance.thrustData.EmissiveMaterialName = "Emissive";
             // EDIT STATIC
-            thrustData.OnColor = new Color(0, 20, 255);
-            thrustData.OffColor = new Color(0, 0, 0);
-            thrustData.NonWorkingColor = new Color(0, 0, 0);
-            thrustData.NonFunctionalColor = new Color(0, 0, 0);
-            thrustData.ThrusterOn_EmissiveMultiplier = 10f;
-            thrustData.ThrusterOff_EmissiveMultiplier = 0f;
-            thrustData.ThrusterNotWorking_EmissiveMultiplier = 0f;
-            thrustData.ThrusterNonFunctional_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.OnColor = new Color(0, 20, 255, 255);
+            ThrusterDataInstance.thrustData.OffColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonWorkingColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonFunctionalColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.ThrusterOn_EmissiveMultiplier = 1f;
+            ThrusterDataInstance.thrustData.ThrusterOff_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNotWorking_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNonFunctional_EmissiveMultiplier = 0f;
             // EDIT DYNAMIC
-            thrustData.ChangeColorByThrustOutput = true;
-            thrustData.AntiFlickerThreshold = 0.01f;
-            thrustData.ColorAtMaxThrust = new Color(255, 40, 10);
-            thrustData.MaxThrust_EmissiveMultiplierMin = 1f;
-            thrustData.MaxThrust_EmissiveMultiplierMax = 50f;
+            ThrusterDataInstance.thrustData.ChangeColorByThrustOutput = true;
+            ThrusterDataInstance.thrustData.AntiFlickerThreshold = 0.01f;
+            ThrusterDataInstance.thrustData.ColorAtMaxThrust = new Color(255, 40, 10, 255);
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMin = 1f;
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMax = 50f;
             // EDIT DEFAULTS
-            //thrustData.ErrorColor = Color.Magenta;
-            //thrustData.CurrentColor = Color.Magenta;
+            //ThrusterDataInstance.thrustData.ErrorColor = Color.Magenta;
+            //ThrusterDataInstance.thrustData.CurrentColor = Color.Magenta;
 
             // DO NOT EDIT
-            if (!MyThrusterData.ContainsKey(MySubtypeID))
-                MyThrusterData[MySubtypeID] = new List<ThrusterData>();
-            MyThrusterData[MySubtypeID].Add(thrustData);
+            if (!ThrusterDataInstance.SavedThrusterData.ContainsKey(ThrusterDataInstance.MySubtypeID))
+                ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID] = new List<ThrusterDataHandler.ThrusterData>();
+            ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID].Add(ThrusterDataInstance.thrustData);
+            // ============================================================== COPY BLOCK END
+
+            // ============================================================== COPY BLOCK START
+            // DO NOT EDIT
+            ThrusterDataInstance.thrustData = new ThrusterDataHandler.ThrusterData();
+
+            // EDIT THRUSTER
+            ThrusterDataInstance.MySubtypeID = "LargeBlockSmallThrust";
+            // EDIT MATERIAL
+            ThrusterDataInstance.thrustData.EmissiveMaterialName = "Emissive";
+            // EDIT STATIC
+            ThrusterDataInstance.thrustData.OnColor = new Color(0, 20, 255);
+            ThrusterDataInstance.thrustData.OffColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonWorkingColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonFunctionalColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.ThrusterOn_EmissiveMultiplier = 10f;
+            ThrusterDataInstance.thrustData.ThrusterOff_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNotWorking_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNonFunctional_EmissiveMultiplier = 0f;
+            // EDIT DYNAMIC
+            ThrusterDataInstance.thrustData.ChangeColorByThrustOutput = true;
+            ThrusterDataInstance.thrustData.AntiFlickerThreshold = 0.01f;
+            ThrusterDataInstance.thrustData.ColorAtMaxThrust = new Color(255, 40, 10);
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMin = 1f;
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMax = 50f;
+            // EDIT DEFAULTS
+            //ThrusterDataInstance.thrustData.ErrorColor = Color.Magenta;
+            //ThrusterDataInstance.thrustData.CurrentColor = Color.Magenta;
+
+            // DO NOT EDIT
+            if (!ThrusterDataInstance.SavedThrusterData.ContainsKey(ThrusterDataInstance.MySubtypeID))
+                ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID] = new List<ThrusterDataHandler.ThrusterData>();
+            ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID].Add(ThrusterDataInstance.thrustData);
+            // ============================================================== COPY BLOCK END
+
+            // ============================================================== COPY BLOCK START
+            // DO NOT EDIT
+            ThrusterDataInstance.thrustData = new ThrusterDataHandler.ThrusterData();
+
+            // EDIT THRUSTER
+            ThrusterDataInstance.MySubtypeID = "LargeBlockSmallThrust";
+            // EDIT MATERIAL
+            ThrusterDataInstance.thrustData.EmissiveMaterialName = "EmissiveCustom1";
+            // EDIT STATIC
+            ThrusterDataInstance.thrustData.OnColor = new Color(0, 20, 255);
+            ThrusterDataInstance.thrustData.OffColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonWorkingColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonFunctionalColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.ThrusterOn_EmissiveMultiplier = 10f;
+            ThrusterDataInstance.thrustData.ThrusterOff_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNotWorking_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNonFunctional_EmissiveMultiplier = 0f;
+            // EDIT DYNAMIC
+            ThrusterDataInstance.thrustData.ChangeColorByThrustOutput = true;
+            ThrusterDataInstance.thrustData.AntiFlickerThreshold = 0.01f;
+            ThrusterDataInstance.thrustData.ColorAtMaxThrust = new Color(255, 40, 10);
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMin = 1f;
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMax = 50f;
+            // EDIT DEFAULTS
+            //ThrusterDataInstance.thrustData.ErrorColor = Color.Magenta;
+            //ThrusterDataInstance.thrustData.CurrentColor = Color.Magenta;
+
+            // DO NOT EDIT
+            if (!ThrusterDataInstance.SavedThrusterData.ContainsKey(ThrusterDataInstance.MySubtypeID))
+                ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID] = new List<ThrusterDataHandler.ThrusterData>();
+            ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID].Add(ThrusterDataInstance.thrustData);
+            // ============================================================== COPY BLOCK END
+
+
+            // ============================================================== COPY BLOCK START
+            // DO NOT EDIT
+            ThrusterDataInstance.thrustData = new ThrusterDataHandler.ThrusterData();
+
+            // EDIT THRUSTER
+            ThrusterDataInstance.MySubtypeID = "LargeBlockLargeThrust";
+            // EDIT MATERIAL
+            ThrusterDataInstance.thrustData.EmissiveMaterialName = "Emissive";
+            // EDIT STATIC
+            ThrusterDataInstance.thrustData.OnColor = new Color(0, 20, 255);
+            ThrusterDataInstance.thrustData.OffColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonWorkingColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonFunctionalColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.ThrusterOn_EmissiveMultiplier = 10f;
+            ThrusterDataInstance.thrustData.ThrusterOff_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNotWorking_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNonFunctional_EmissiveMultiplier = 0f;
+            // EDIT DYNAMIC
+            ThrusterDataInstance.thrustData.ChangeColorByThrustOutput = true;
+            ThrusterDataInstance.thrustData.AntiFlickerThreshold = 0.01f;
+            ThrusterDataInstance.thrustData.ColorAtMaxThrust = new Color(255, 40, 10);
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMin = 1f;
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMax = 50f;
+            // EDIT DEFAULTS
+            //ThrusterDataInstance.thrustData.ErrorColor = Color.Magenta;
+            //ThrusterDataInstance.thrustData.CurrentColor = Color.Magenta;
+
+            // DO NOT EDIT
+            if (!ThrusterDataInstance.SavedThrusterData.ContainsKey(ThrusterDataInstance.MySubtypeID))
+                ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID] = new List<ThrusterDataHandler.ThrusterData>();
+            ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID].Add(ThrusterDataInstance.thrustData);
+            // ============================================================== COPY BLOCK END
+
+            // ============================================================== COPY BLOCK START
+            // DO NOT EDIT
+            ThrusterDataInstance.thrustData = new ThrusterDataHandler.ThrusterData();
+
+            // EDIT THRUSTER
+            ThrusterDataInstance.MySubtypeID = "LargeBlockLargeThrust";
+            // EDIT MATERIAL
+            ThrusterDataInstance.thrustData.EmissiveMaterialName = "EmissiveCustom1";
+            // EDIT STATIC
+            ThrusterDataInstance.thrustData.OnColor = new Color(0, 20, 255);
+            ThrusterDataInstance.thrustData.OffColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonWorkingColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.NonFunctionalColor = new Color(0, 0, 0);
+            ThrusterDataInstance.thrustData.ThrusterOn_EmissiveMultiplier = 10f;
+            ThrusterDataInstance.thrustData.ThrusterOff_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNotWorking_EmissiveMultiplier = 0f;
+            ThrusterDataInstance.thrustData.ThrusterNonFunctional_EmissiveMultiplier = 0f;
+            // EDIT DYNAMIC
+            ThrusterDataInstance.thrustData.ChangeColorByThrustOutput = true;
+            ThrusterDataInstance.thrustData.AntiFlickerThreshold = 0.01f;
+            ThrusterDataInstance.thrustData.ColorAtMaxThrust = new Color(255, 40, 10);
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMin = 1f;
+            ThrusterDataInstance.thrustData.MaxThrust_EmissiveMultiplierMax = 50f;
+            // EDIT DEFAULTS
+            //ThrusterDataInstance.thrustData.ErrorColor = Color.Magenta;
+            //ThrusterDataInstance.thrustData.CurrentColor = Color.Magenta;
+
+            // DO NOT EDIT
+            if (!ThrusterDataInstance.SavedThrusterData.ContainsKey(ThrusterDataInstance.MySubtypeID))
+                ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID] = new List<ThrusterDataHandler.ThrusterData>();
+            ThrusterDataInstance.SavedThrusterData[ThrusterDataInstance.MySubtypeID].Add(ThrusterDataInstance.thrustData);
             // ============================================================== COPY BLOCK END
         }
 

@@ -22,29 +22,39 @@ using VRage.Utils;
 using VRageRender;
 using VRageRender.Import;
 
-using PSYCHO.ThrusterVisualHandlerData;
-using System.Linq;
+using Sandbox.Game.Lights;
+using VRageRender.Lights;
 
-namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
+using System.Linq;
+using BulletXNA;
+
+//using PSYCHO.ThrusterVisualHandlerUserSettings;
+using PSYCHO.ThrusterVisualHandlerData;
+
+namespace PSYCHO.ThrusterEmissiveColors
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Thrust), false)]
 
     public class ThrusterEmissiveColorsLogic : MyGameLogicComponent
     {
-        public IMyThrust block;
-        public string blockSubtypeID = "";
-        public MyEntitySubpart subpart;
-        public string subpartName = "Empty";
+        // DO NOT USE THIS!
+        bool EXPERIMENTAL = false;
 
-        UserData MyUserData => UserData.UserDataInstance;
+        IMyThrust block;
+        string blockSubtypeID = "";
+        MyEntitySubpart subpart;
+        string subpartName = "Empty";
+
+        ThrusterDataHandler ThrusterDataInstance => ThrusterDataHandler.ThrusterDataInstance;
+        private PSYCHO.ThrusterVisualHandlerUserSettings.UserData MyUserData = new PSYCHO.ThrusterVisualHandlerUserSettings.UserData();
 
         bool OneEmissiveMaterial = false;
 
-        public List<string> MaterialNames = new List<string>();
-
-        public List<UserData.ThrusterData> ThrusterData = new List<UserData.ThrusterData>();
-        public List<UserData.ThrusterData> StaticThrusterData = new List<UserData.ThrusterData>();
-        public List<UserData.ThrusterData> DynamicThrusterData = new List<UserData.ThrusterData>();
+        List<string> MaterialNames = new List<string>();
+        
+        List<ThrusterDataHandler.ThrusterData> MyThrusterData = new List<ThrusterDataHandler.ThrusterData>();
+        List<ThrusterDataHandler.ThrusterData> StaticThrusterData = new List<ThrusterDataHandler.ThrusterData>();
+        List<ThrusterDataHandler.ThrusterData> DynamicThrusterData = new List<ThrusterDataHandler.ThrusterData>();
 
         string EmissiveMaterialName = "Emissive";
 
@@ -69,6 +79,16 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
         int EmissiveMaterialCount = 0;
 
+        Dictionary<string, IMyModelDummy> ModelDummy = new Dictionary<string, IMyModelDummy>();
+        Vector3D LightInnerDummyPos;
+        Vector3D LightOuterDummyPos;
+        int DummyCount = 0;
+
+        Vector4 DefaultFlameIdleColor;
+        Vector4 DefaultFlameFullColor;
+
+        ThrusterDataHandler.ThrusterData DynamicData;
+
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
             block = (IMyThrust)Entity;
@@ -89,41 +109,86 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
         {
             if (block == null) // Null check all the things.
                 return;
-            
+
             blockSubtypeID = block.BlockDefinition.SubtypeId;
+
+            if (EXPERIMENTAL)
+            {
+                var blockDefinition = block.SlimBlock.BlockDefinition as MyThrustDefinition;
+
+                DefaultFlameIdleColor = blockDefinition.FlameIdleColor;
+                DefaultFlameFullColor = blockDefinition.FlameFullColor;
+
+                block.Model.GetDummies(ModelDummy);
+                if (ModelDummy.ContainsKey("flame_light_inner"))
+                {
+                    DummyCount++;
+                    LightInnerDummyPos = ModelDummy["flame_light_inner"].Matrix.Translation;
+                }
+                if (ModelDummy.ContainsKey("flame_light_outer"))
+                {
+                    DummyCount++;
+                    LightOuterDummyPos = ModelDummy["flame_light_outer"].Matrix.Translation;
+                }
+            }
 
             //subpart = block.GetSubpart(subpartName);
             block.TryGetSubpart(subpartName, out subpart);
 
-            ThrusterData = MyUserData.GetThrusterData(blockSubtypeID);
-            EmissiveMaterialCount = ThrusterData.Count;
+            MyThrusterData = ThrusterDataInstance.GetThrusterData(blockSubtypeID);
+            EmissiveMaterialCount = MyThrusterData.Count;
 
-            if (EmissiveMaterialCount == 1)
+            foreach (var data in MyThrusterData)
             {
-                OneEmissiveMaterial = true;
-                PrepData(ThrusterData[0]);
-
+                PrepData(data);
                 if (ChangeColorByThrustOutput)
-                    NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
-                else
-                    CheckAndSetEmissives();
-            }
-            else
-            {
-                foreach (var data in ThrusterData)
                 {
-                    PrepData(data);
-                    if (ChangeColorByThrustOutput)
-                    {
-                        DynamicThrusterData.Add(data);
-                    }
-                    else
-                    {
-                        StaticThrusterData.Add(data);
-                        CheckAndSetEmissives();
-                    }
+                    DynamicData = new ThrusterDataHandler.ThrusterData();
+                    //dynamicData = data;
+
+                    /*
+                    data.ActiveColor = data.OnColor;
+                    data.InactiveColor = data.NonFunctionalColor;
+                    data.ActiveGlow = data.ThrusterOn_EmissiveMultiplier;
+                    data.InactiveGlow = data.ThrusterNonFunctional_EmissiveMultiplier;
+                    data.ThrusterStatus = 0f;
+                    data.ThrusterStrength = 0f;
+                    */
+
+                    DynamicData.EmissiveMaterialName = data.EmissiveMaterialName;
+                    DynamicData.OnColor = data.OnColor;
+                    DynamicData.OffColor = data.OffColor;
+                    DynamicData.NonWorkingColor = data.NonWorkingColor;
+                    DynamicData.NonFunctionalColor = data.NonFunctionalColor;
+                    DynamicData.ThrusterOn_EmissiveMultiplier = data.ThrusterOn_EmissiveMultiplier;
+                    DynamicData.ThrusterOff_EmissiveMultiplier = data.ThrusterOff_EmissiveMultiplier;
+                    DynamicData.ThrusterNotWorking_EmissiveMultiplier = data.ThrusterNotWorking_EmissiveMultiplier;
+                    DynamicData.ThrusterNonFunctional_EmissiveMultiplier = data.ThrusterNonFunctional_EmissiveMultiplier;
+                    DynamicData.ChangeColorByThrustOutput = data.ChangeColorByThrustOutput;
+                    DynamicData.AntiFlickerThreshold = data.AntiFlickerThreshold;
+                    DynamicData.ColorAtMaxThrust = data.ColorAtMaxThrust;
+                    DynamicData.MaxThrust_EmissiveMultiplierMin = data.MaxThrust_EmissiveMultiplierMin;
+                    DynamicData.MaxThrust_EmissiveMultiplierMax = data.MaxThrust_EmissiveMultiplierMax;
+                    DynamicData.ErrorColor = data.ErrorColor;
+                    DynamicData.CurrentColor = data.CurrentColor;
+                    DynamicData.ActiveColor = data.OnColor;
+                    DynamicData.InactiveColor = data.NonFunctionalColor;
+                    DynamicData.ActiveGlow = data.ThrusterOn_EmissiveMultiplier;
+                    DynamicData.InactiveGlow = data.ThrusterNonFunctional_EmissiveMultiplier;
+                    DynamicData.ThrusterStatus = 0f;
+                    DynamicData.ThrusterStrength = 0f;
+
+                    DynamicThrusterData.Add(DynamicData);
+                }
+                else
+                {
+                    StaticThrusterData.Add(data);
+                    CheckAndSetEmissives();
                 }
             }
+
+            if (DynamicThrusterData.Any())
+                NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME;
 
             // Hook to events.
             block.IsWorkingChanged += IsWorkingChanged;
@@ -141,6 +206,26 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             block.IsWorkingChanged -= IsWorkingChanged;
             block.PropertiesChanged -= PropertiesChanged;
 
+            if (EXPERIMENTAL)
+            {
+                if (_light != null)
+                {
+                    MyLights.RemoveLight(_light);
+                    _light = null;
+                }
+                if (_lightInner != null)
+                {
+                    MyLights.RemoveLight(_lightInner);
+                    _lightInner = null;
+                }
+                if (_lightOuter != null)
+                {
+                    MyLights.RemoveLight(_lightOuter);
+                    _lightOuter = null;
+                }
+            }
+
+
             block = null;
             subpart = null;
 
@@ -149,7 +234,7 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
 
 
-        private void IsWorkingChanged(IMyCubeBlock block)
+        public void IsWorkingChanged(IMyCubeBlock block)
         {
             if (block == null)
             {
@@ -215,7 +300,7 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             }
         }
 
-        public void PrepData(UserData.ThrusterData data)
+        void PrepData(ThrusterDataHandler.ThrusterData data)
         {
             EmissiveMaterialName = data.EmissiveMaterialName;
 
@@ -242,7 +327,7 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
 
 
         // Handle static color changes
-        public void CheckAndSetEmissives()
+        void CheckAndSetEmissives()
         {
             if (block.IsFunctional)
             {
@@ -301,123 +386,239 @@ namespace PSYCHO_SuperThrusters.ThrusterEmissiveColors
             {
                 //var data = ThrusterData[0];
                 //PrepData(OneThrusterData);
-                HandleEmissives();
+                //HandleEmissives();
             }
             else
             {
+                ThrustPercent = block.CurrentThrust / block.MaxThrust;
+
+                for (int i = 0; i < DynamicThrusterData.Count; i++)
+                {
+                    HandleEmissives(i);
+                }
+
+                ThrustPercentLast = ThrustPercent;
+                /*
                 foreach (var data in DynamicThrusterData)
                 {
                     MaterialAppliedCount++;
-                    PrepData(data);
-                    HandleEmissives();
+                    //PrepData(data);
+                    HandleEmissives(data);
                 }
-
-                MaterialAppliedCount = 0;
+                */
             }
         }
 
-
-
-        float glow;
+        float ThrustPercent = 0f;
+        float ThrustPercentLast = 0f;
+        //float glow;
         float CurrentEmissiveMultiplier = 0f;
         int MaterialAppliedCount = 0;
-        public void HandleEmissives()
+
+        Color ActiveColor = Color.Black;
+        Color InactiveColor = Color.Black;
+
+        float thrustPercentLast = 0f;
+
+        //float ThrusterStatus = 0f;
+        //float ThrusterStrength = 0f;
+        //public void HandleEmissives(UserData.ThrusterData data)
+        void HandleEmissives(int index)
         {
             if (block.IsFunctional && block.IsWorking && block.Enabled)
             {
-                MaterialAppliedCount = 0;
+                DynamicThrusterData[index].ThrusterStatus = MathHelper.Clamp(DynamicThrusterData[index].ThrusterStatus + 0.005f, 0f, 1f);
 
-                float thrustPercent = block.CurrentThrust / block.MaxThrust;
+                if (DynamicThrusterData[index].ThrusterStatus == 1)
+                {
+                    if (ThrustPercent > ThrustPercentLast && DynamicThrusterData[index].ThrusterStrength < ThrustPercent)
+                    {
+                        DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength + 0.005f), 0f, 1f);
+                    }
+                    else if (ThrustPercent < ThrustPercentLast && DynamicThrusterData[index].ThrusterStrength > ThrustPercent)
+                    {
+                        DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength - 0.005f), 0f, 1f);
+                    }
+                    else
+                    {
+                        if (DynamicThrusterData[index].ThrusterStrength < ThrustPercent)
+                        {
+                            DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength + 0.005f), 0f, ThrustPercent);
+                        }
+                        else if (DynamicThrusterData[index].ThrusterStrength > ThrustPercent)
+                        {
+                            DynamicThrusterData[index].ThrusterStrength = MathHelper.Clamp((DynamicThrusterData[index].ThrusterStrength - 0.005f), ThrustPercent, 1f);
+                        }
+                    }
 
-                if (glow <= 0 && thrustPercent <= AntiFlickerThreshold)
-                    glow = 0f;
-                else if (glow < thrustPercent)
-                    glow += 0.005f;
-                else if (glow > thrustPercent)
-                    glow -= 0.005f;
-
-                float mult = MaxThrust_EmissiveMultiplierMin + (MaxThrust_EmissiveMultiplierMax - MaxThrust_EmissiveMultiplierMin);
-                if (CurrentEmissiveMultiplier < mult)
-                    CurrentEmissiveMultiplier += 0.005f;
+                    DynamicThrusterData[index].ActiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterOn_EmissiveMultiplier, DynamicThrusterData[index].MaxThrust_EmissiveMultiplierMax, DynamicThrusterData[index].ThrusterStrength);
+                    DynamicThrusterData[index].ActiveColor = Color.Lerp(DynamicThrusterData[index].OnColor, DynamicThrusterData[index].ColorAtMaxThrust, DynamicThrusterData[index].ThrusterStrength);
+                }
                 else
-                    CurrentEmissiveMultiplier = mult * glow;
+                {
+                    DynamicThrusterData[index].ActiveGlow = MathHelper.Lerp(DynamicThrusterData[index].InactiveGlow, DynamicThrusterData[index].ThrusterOn_EmissiveMultiplier, DynamicThrusterData[index].ThrusterStatus);
+                    DynamicThrusterData[index].ActiveColor = Color.Lerp(DynamicThrusterData[index].InactiveColor, DynamicThrusterData[index].OnColor, DynamicThrusterData[index].ThrusterStatus);
+                }
 
-                CurrentColor = Color.Lerp(OnColor, ColorAtMaxThrust, glow);
-
-                block.SetEmissiveParts(EmissiveMaterialName, CurrentColor, CurrentEmissiveMultiplier);
+                block.SetEmissiveParts(DynamicThrusterData[index].EmissiveMaterialName, DynamicThrusterData[index].ActiveColor, DynamicThrusterData[index].ActiveGlow);
                 if (subpart != null)
                 {
-                    subpart.SetEmissiveParts(EmissiveMaterialName, CurrentColor, CurrentEmissiveMultiplier);
+                    subpart.SetEmissiveParts(DynamicThrusterData[index].EmissiveMaterialName, DynamicThrusterData[index].ActiveColor, DynamicThrusterData[index].ActiveGlow);
+                }
+
+                if (EXPERIMENTAL)
+                {
+                    if (DummyCount == 2)
+                    {
+                        LightingHandler(ref _lightInner, Vector3D.Transform(LightInnerDummyPos, block.WorldMatrix), 0.7f, Color.Orange, 1f, 2f, DynamicThrusterData[index].ThrusterStrength);
+                        LightingHandler(ref _lightOuter, Vector3D.Transform(LightOuterDummyPos, block.WorldMatrix), 1f, Color.Red, 1f, 10f, DynamicThrusterData[index].ThrusterStrength);
+                    }
                 }
             }
             else
             {
-                Color color = ErrorColor;
-                Color colorApply = ErrorColor;
-                float mult = 1f;
+                DynamicThrusterData[index].ThrusterStatus = MathHelper.Clamp(DynamicThrusterData[index].ThrusterStatus - 0.005f, 0f, 1f);
+
+                DynamicThrusterData[index].ThrusterStrength = 0f;
 
                 if (!block.IsFunctional)
                 {
-                    color = NonFunctionalColor;
-                    mult = ThrusterNonFunctional_EmissiveMultiplier + (MaxThrust_EmissiveMultiplierMax - ThrusterNonFunctional_EmissiveMultiplier);
+                    DynamicThrusterData[index].InactiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterNonFunctional_EmissiveMultiplier, DynamicThrusterData[index].ActiveGlow, DynamicThrusterData[index].ThrusterStatus);
+                    DynamicThrusterData[index].InactiveColor = Color.Lerp(DynamicThrusterData[index].NonFunctionalColor, DynamicThrusterData[index].ActiveColor, DynamicThrusterData[index].ThrusterStatus);
                 }
                 else if (!block.Enabled)
                 {
-                    color = OffColor;
-                    mult = ThrusterOff_EmissiveMultiplier + (MaxThrust_EmissiveMultiplierMax - ThrusterOff_EmissiveMultiplier);
+                    DynamicThrusterData[index].InactiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterOff_EmissiveMultiplier, DynamicThrusterData[index].ActiveGlow, DynamicThrusterData[index].ThrusterStatus);
+                    DynamicThrusterData[index].InactiveColor = Color.Lerp(DynamicThrusterData[index].OffColor, DynamicThrusterData[index].ActiveColor, DynamicThrusterData[index].ThrusterStatus);
                 }
                 else
                 {
-                    color = NonWorkingColor;
-                    mult = ThrusterNotWorking_EmissiveMultiplier + (MaxThrust_EmissiveMultiplierMax - ThrusterNotWorking_EmissiveMultiplier);
+                    DynamicThrusterData[index].InactiveGlow = MathHelper.Lerp(DynamicThrusterData[index].ThrusterNotWorking_EmissiveMultiplier, DynamicThrusterData[index].ActiveGlow, DynamicThrusterData[index].ThrusterStatus);
+                    DynamicThrusterData[index].InactiveColor = Color.Lerp(DynamicThrusterData[index].NonWorkingColor, DynamicThrusterData[index].ActiveColor, DynamicThrusterData[index].ThrusterStatus);
                 }
 
-                float minRamp = 0.005f;
-
-                if (glow > 0)
-                    glow -= minRamp;
-
-                colorApply = Color.Lerp(color, ColorAtMaxThrust, glow);
-                CurrentEmissiveMultiplier = mult * glow;
-
-                block.SetEmissiveParts(EmissiveMaterialName, colorApply, CurrentEmissiveMultiplier);
+                block.SetEmissiveParts(DynamicThrusterData[index].EmissiveMaterialName, DynamicThrusterData[index].InactiveColor, DynamicThrusterData[index].InactiveGlow);
                 if (subpart != null)
                 {
-                    subpart.SetEmissiveParts(EmissiveMaterialName, colorApply, CurrentEmissiveMultiplier);
+                    subpart.SetEmissiveParts(DynamicThrusterData[index].EmissiveMaterialName, DynamicThrusterData[index].InactiveColor, DynamicThrusterData[index].InactiveGlow);
                 }
 
-                if (glow <= 0)
+                if (DynamicThrusterData[index].ThrusterStatus == 0)
                 {
-                    if (!block.IsFunctional)
-                    {
-                        color = NonFunctionalColor;
-                        mult = ThrusterNonFunctional_EmissiveMultiplier;
-                    }
-                    else if (!block.Enabled)
-                    {
-                        color = OffColor;
-                        mult = ThrusterOff_EmissiveMultiplier;
-                    }
-                    else
-                    {
-                        color = NonWorkingColor;
-                        mult = ThrusterNotWorking_EmissiveMultiplier;
-                    }
-
-                    CurrentEmissiveMultiplier = mult;
-
-                    block.SetEmissiveParts(EmissiveMaterialName, color, mult);
-                    if (subpart != null)
-                    {
-                        subpart.SetEmissiveParts(EmissiveMaterialName, color, mult);
-                    }
-
-                    if (MaterialAppliedCount < EmissiveMaterialCount)
-                        return;
-
-                    NeedsUpdate = MyEntityUpdateEnum.NONE;
+                    DynamicThrusterData[index].ThrusterStrength = 0f;
                 }
             }
+
+            // PROTOTYPE
+            if (EXPERIMENTAL)
+            {
+                var flameColor = Color.Lerp(new Color(0.2745098f, 0.4090196f, 0.6505882f, 0.75f), Color.OrangeRed, DynamicThrusterData[index].ThrusterStrength);
+                FlameHandler(flameColor);
+            }
+        }
+
+        MyLight _light;
+        MyLight _lightInner;
+        MyLight _lightOuter;
+        void LightingHandler()
+        {
+            if (_light == null)
+            {
+                _light = new MyLight();
+
+                //These control the light settings on spawn.
+                var lightRange = 2.5f; //Range of light
+                var lightIntensity = 5.0f; //Light intensity
+                var lightFalloff = 0.5f; //Light falloff
+                //var lightAdjustment = 0.0f;
+                var lightPosition = block.WorldMatrix.Translation + block.WorldMatrix.Forward * 0.2; //Sets the light to the center of the block you are spawning it on, if you need it elsehwere you will need help.
+
+                _light = MyLights.AddLight(); //Ignore - adds the light to the games lighting system
+                _light.Start(lightPosition, Color.Red, lightRange, ""); // Ignore- Determines the lights position, initial color and initial range.
+                _light.Intensity = lightIntensity; //Ignore - sets light intensity from above values.
+                _light.Falloff = lightFalloff; //Ignore - sets light fall off from above values.
+                //_light.PointLightOffset = lightOffset; //Ignore - sets light offset from above values.
+                _light.LightOn = true; //Ignore - turns light on
+            }
+            else
+            {
+                //_light.Intensity = 10 * ThrusterStrength;
+                _light.Position = block.WorldMatrix.Translation + block.WorldMatrix.Forward; //Updates the lights position constantly. You'll need help if you want it somewhere else.
+                _light.UpdateLight(); //Ignore - tells the game to update the light.
+            }
+        }
+
+        //public void LightingHandler(ref MyLight light, float positionOffset, float lightRange, Color color)
+        void LightingHandler(ref MyLight light, Vector3D position, float lightRange, Color color, float falloff, float intensity, float mult)
+        {
+            if (light == null)
+            {
+                light = new MyLight();
+
+                //These control the light settings on spawn.
+                //var lightRange = 2.5f; //Range of light
+                var lightIntensity = 5.0f; //Light intensity
+                //var lightFalloff = 0.5f; //Light falloff
+                var lightFalloff = falloff; //Light falloff
+                //var lightAdjustment = 0.0f;
+                var lightPosition = position; //Sets the light to the center of the block you are spawning it on, if you need it elsehwere you will need help.
+
+                light = MyLights.AddLight(); //Ignore - adds the light to the games lighting system
+                light.Start(lightPosition, color, lightRange, ""); // Ignore- Determines the lights position, initial color and initial range.
+                light.Intensity = lightIntensity; //Ignore - sets light intensity from above values.
+                light.Falloff = lightFalloff; //Ignore - sets light fall off from above values.
+                //_light.PointLightOffset = lightOffset; //Ignore - sets light offset from above values.
+                light.LightOn = true; //Ignore - turns light on
+            }
+            else
+            {
+                light.Intensity = intensity * mult;
+                light.Position = position; //Updates the lights position constantly. You'll need help if you want it somewhere else.
+                light.UpdateLight(); //Ignore - tells the game to update the light.
+            }
+        }
+
+        void FlameHandler(Color color)
+        {
+            if (Entity == null)
+                return;
+
+            var thrust = block as MyThrust;
+            if (thrust == null || thrust.CubeGrid.Physics == null)
+                return;
+
+            uint renderObjectID = Entity.Render.GetRenderObjectID();
+            if (renderObjectID == 4294967295u)
+                return;
+
+            MyThrustDefinition blockDefinition = thrust.BlockDefinition;
+
+            //if (thrust.CurrentStrength > 0.001f)
+
+            //blockDefinition.FlameIdleColor = color;
+            blockDefinition.FlameFullColor = color;
+            ((MyRenderComponentThrust)thrust.Render).UpdateFlameAnimatorData();
+        }
+
+        void FlameHandler()
+        {
+            if (Entity == null)
+                return;
+
+            var thrust = block as MyThrust;
+            if (thrust == null || thrust.CubeGrid.Physics == null)
+                return;
+
+            uint renderObjectID = Entity.Render.GetRenderObjectID();
+            if (renderObjectID == 4294967295u)
+                return;
+
+            MyThrustDefinition blockDefinition = thrust.BlockDefinition;
+
+            //blockDefinition.FlameIdleColor = DefaultFlameIdleColor;
+            blockDefinition.FlameFullColor = DefaultFlameFullColor;
+
+            ((MyRenderComponentThrust)thrust.Render).UpdateFlameAnimatorData();
         }
     }
 }
